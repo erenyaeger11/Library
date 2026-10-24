@@ -87,7 +87,12 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ qr_identifier: decodedText, purpose: purposeSelect.value })
       });
-      const payload = await response.json();
+      let payload;
+      try {
+        payload = await response.json();
+      } catch {
+        throw new Error('The server returned an invalid response. Refresh the page and try again.');
+      }
       if (!response.ok || !payload.success) throw new Error(payload.message || 'Unable to record entry.');
       const visit = payload.data;
       const student = visit.student;
@@ -126,14 +131,27 @@
       }
       if (scanner?.isScanning) await scanner.stop();
       if (scanner) await scanner.clear();
-      scanner = new window.Html5Qrcode(reader.id, { verbose: false });
-      setScanMessage('Starting laptop camera…');
-      await scanner.start(cameraId, { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1 }, handleQr, () => {});
+      scanner = new window.Html5Qrcode(reader.id, {
+        verbose: false,
+        formatsToSupport: [window.Html5QrcodeSupportedFormats.QR_CODE]
+      });
+      setScanMessage('Starting camera…');
+      await scanner.start(cameraId, {
+        fps: 10,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const size = Math.floor(Math.min(viewfinderWidth, viewfinderHeight, 300) * 0.8);
+          return { width: size, height: size };
+        }
+      }, handleQr, () => {});
       setScanMessage('Camera is live. Hold a student QR code in the frame.');
     } catch (error) {
       const detail = error?.name === 'NotAllowedError'
-        ? 'Camera permission denied. Allow access in browser settings, then restart the camera.'
-        : error.message || 'Could not start camera. Check browser permissions and webcam availability.';
+        ? 'Camera permission denied. Allow camera access in browser settings, then restart the camera.'
+        : error?.name === 'NotReadableError'
+          ? 'The camera is busy in another app. Close other apps using it, then restart the camera.'
+          : error?.name === 'OverconstrainedError'
+            ? 'This camera does not support the requested settings. Select another camera and try again.'
+            : error.message || 'Could not start camera. Check browser permissions and webcam availability.';
       setScanMessage(detail, 'error');
     }
   }
@@ -144,7 +162,7 @@
         throw new Error('Camera scanner library failed to load. Check your internet connection.');
       }
       if (!window.isSecureContext) throw new Error('Camera access requires HTTPS or localhost.');
-      setScanMessage('Finding laptop cameras…');
+      setScanMessage('Finding cameras…');
       const cameras = await window.Html5Qrcode.getCameras();
       if (!cameras.length) throw new Error('No camera was found. Connect or enable a webcam, then try again.');
       cameraSelect.replaceChildren(...cameras.map((camera, index) => {
@@ -154,7 +172,9 @@
         return option;
       }));
       cameraSelect.disabled = false;
-      const preferred = cameras.find((camera) => /integrated|built.?in|webcam|front/i.test(camera.label)) || cameras[0];
+      const preferred = cameras.find((camera) => /back|rear|environment/i.test(camera.label))
+        || cameras.find((camera) => /integrated|built.?in|webcam|front/i.test(camera.label))
+        || cameras[0];
       cameraSelect.value = preferred.id;
       await startCamera(preferred.id);
     } catch (error) {

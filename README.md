@@ -1,6 +1,6 @@
 # SSU QR Code Library Entry and Visitor Logging System
 
-This is a PHP 8 and MySQL web application. The administrative interface and API are served by PHP; small browser-side scripts are used only for QR rendering and camera access.
+This is a PHP 8 and MySQL web application. The administrative interface and API are served by PHP; each administrative page template lives in its own file under `pages/`, while `index.php` handles routing and shared layout. Small browser-side scripts are used only for QR rendering and camera access.
 
 ## Requirements
 - PHP 8.1 or later with PDO MySQL and sessions enabled
@@ -15,13 +15,13 @@ This is a PHP 8 and MySQL web application. The administrative interface and API 
 4. Start the app from the project folder with `php -S 127.0.0.1:8000`.
 5. Open `http://127.0.0.1:8000` and sign in.
 
-Alternatively, put the project under XAMPP's `htdocs`, start Apache and MySQL, import the SQL file, and open the project folder through `http://localhost/CDC101`.
+Alternatively, put the project under XAMPP's `htdocs`, run `composer install` from the project folder to create `vendor/autoload.php`, then start Apache and MySQL, import the SQL file, and open the project folder through `http://localhost/CDC101`.
 
 ## Deploy
 Vercel does not execute this PHP application. Deploy the project to a PHP-capable host that provides MySQL/MariaDB, or use a PHP server with a separately managed database.
 
 1. Create a production database and import `sql/ssu_library_qr.sql`.
-2. Upload the PHP project, including `index.php`, `api/`, and `assets/`, to the host's web root. Keep `vendor/` available by running `composer install --no-dev` in the project folder (or upload the generated `vendor/` directory).
+2. Upload the PHP project, including `index.php`, `pages/`, `api/`, and `assets/`, to the host's web root. Keep `vendor/` available by running `composer install --no-dev` in the project folder (or upload the generated `vendor/` directory).
 3. Set `APP_ENV=production`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASS` in the host's environment settings or private `.env` file. Never publish database credentials.
 4. Point the domain's document root at this project and enable HTTPS.
 5. Visit the domain and sign in. Do not expect Vercel to run PHP files.

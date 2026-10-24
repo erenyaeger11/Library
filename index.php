@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/api/config.php';
 
+define('LIBRARY_APP_ENTRY', true);
 startSession();
 
 function escapeHtml($value): string
@@ -317,39 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $admin = $_SESSION['admin'] ?? null;
 if (!$admin) {
     $loginError = $flashError;
-    ?>
-    <!doctype html>
-    <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Administrator Login | SSU Library</title>
-      <link rel="stylesheet" href="<?= escapeHtml($basePath) ?>/assets/php-app.css">
-    </head>
-    <body class="login-page">
-      <main class="login-card">
-        <section class="login-brand">
-          <p class="eyebrow">Samar State University</p>
-          <h1>Library Access Portal</h1>
-          <p>Secure student entry, QR verification, and visitor logging for the library.</p>
-          <div class="login-note"><strong>Quick verification</strong><br>Scan a student QR code to validate the account, log the visit, and prevent duplicate entry attempts.</div>
-        </section>
-        <section class="login-form">
-          <p class="eyebrow">Administrator Login</p>
-          <h2>Welcome back</h2>
-          <?php if ($loginError): ?><div class="alert error" role="alert"><?= escapeHtml($loginError) ?></div><?php endif; ?>
-          <form method="post" action="index.php" class="stack">
-            <input type="hidden" name="action" value="login">
-            <input type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>">
-            <label>Email address<input type="email" name="email" autocomplete="username" required></label>
-            <label>Password<input type="password" name="password" autocomplete="current-password" required></label>
-            <button class="button primary full" type="submit">Sign in</button>
-          </form>
-        </section>
-      </main>
-    </body>
-    </html>
-    <?php
+    require __DIR__ . '/pages/login.php';
     exit;
 }
 
@@ -451,159 +420,80 @@ foreach (($dashboard['activity'] ?? []) as $day) {
 ?>
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <?php if ($page === 'dashboard'): ?><meta http-equiv="refresh" content="15"><?php endif; ?>
-  <title><?= escapeHtml($pageTitles[$page]) ?> | SSU Library</title>
-  <link rel="stylesheet" href="<?= escapeHtml($basePath) ?>/assets/php-app.css">
-  <?php if ($page === 'students' || $page === 'qr-codes'): ?>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
-  <?php endif; ?>
-  <?php if ($page === 'scanner'): ?>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js" defer></script>
-  <?php endif; ?>
-</head>
-<body>
-<div class="app-shell">
-  <aside class="sidebar">
-    <a class="brand" href="index.php?page=dashboard">
-      <span class="brand-mark">SSU</span>
-      <span><small>Library</small><strong>QR Entry</strong></span>
-    </a>
-    <nav class="main-nav" aria-label="Main navigation">
-      <?php foreach ($pageTitles as $key => $label): ?>
-        <a class="nav-link <?= $page === $key ? 'active' : '' ?>" href="index.php?page=<?= escapeHtml($key) ?>">
-          <span aria-hidden="true"><?= ['dashboard' => '▦', 'students' => '♙', 'qr-codes' => '▦', 'scanner' => '▣', 'logs' => '◷', 'reports' => '▥', 'settings' => '⚙'][$key] ?></span><?= escapeHtml($label) ?>
-        </a>
-      <?php endforeach; ?>
-    </nav>
-    <form method="post" class="logout-form">
-      <input type="hidden" name="action" value="logout">
-      <input type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>">
-      <button class="nav-link logout-link" type="submit"><span aria-hidden="true">↪</span>Logout</button>
-    </form>
-    <div class="sidebar-user"><strong><?= escapeHtml($admin['full_name']) ?></strong><span><?= escapeHtml($admin['email']) ?></span></div>
-  </aside>
-  <main class="main-content">
-    <header class="mobile-header">
-      <a class="brand" href="index.php?page=dashboard"><span class="brand-mark">SSU</span><span><small>Library</small><strong>QR Entry</strong></span></a>
-      <button class="button secondary mobile-menu-button" type="button" onclick="document.body.classList.toggle('nav-open')">Menu</button>
-    </header>
-    <nav class="mobile-nav" aria-label="Mobile navigation">
-      <?php foreach ($pageTitles as $key => $label): ?><a href="index.php?page=<?= escapeHtml($key) ?>"><?= escapeHtml($label) ?></a><?php endforeach; ?>
-      <form method="post"><input type="hidden" name="action" value="logout"><input type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>"><button type="submit">Logout</button></form>
-    </nav>
-    <?php if ($flashMessage): ?><div class="alert success" role="status"><?= escapeHtml($flashMessage) ?></div><?php endif; ?>
-    <?php if ($flashError): ?><div class="alert error" role="alert"><?= escapeHtml($flashError) ?></div><?php endif; ?>
-    <?php if ($dbError): ?><div class="alert error" role="alert">Data could not be loaded: <?= escapeHtml($dbError) ?></div><?php endif; ?>
-
-    <?php if ($page === 'dashboard' && $dashboard): ?>
-      <div class="page-heading"><div><p class="eyebrow">Overview</p><h1>Admin Dashboard</h1></div><a class="button primary" href="index.php?page=students">Manage Students</a></div>
-      <p class="muted small">Live database data · Refreshes every 15 seconds · Updated <?= escapeHtml(date('g:i:s A')) ?></p>
-      <section class="stats-grid">
-        <?php foreach ([
-          ['Total Registered Students', $dashboard['metrics']['total_students']],
-          ["Today's Library Visits", $dashboard['metrics']['today_visits']],
-          ['Active Student Accounts', $dashboard['metrics']['active_student_accounts']],
-          ["Today's Study Visits", $dashboard['metrics']['study_visits_today']],
-          ["Today's Borrow Book Visits", $dashboard['metrics']['borrow_book_visits_today']]
-        ] as [$label, $value]): ?>
-          <article class="card stat-card"><p class="muted"><?= escapeHtml($label) ?></p><strong><?= (int) $value ?></strong></article>
-        <?php endforeach; ?>
-      </section>
-      <section class="content-grid dashboard-grid">
-        <article class="card"><h2>Visitor Activity Chart</h2><div class="chart">
-          <?php foreach ($dashboard['activity'] as $day): ?><div class="chart-day"><span><?= (int) $day['visits'] ?></span><div class="chart-bar" title="<?= escapeHtml($day['date']) ?>: <?= (int) $day['visits'] ?> visits" style="height:<?= max(3, (int) round($day['visits'] / $maxVisits * 100)) ?>%"></div><small><?= escapeHtml($day['label']) ?></small></div><?php endforeach; ?>
-        </div></article>
-        <article class="card"><h2>Quick Actions</h2><div class="quick-links"><a href="index.php?page=scanner">Scan New Entry <span>→</span></a><a href="index.php?page=students">Manage Students <span>→</span></a><a href="index.php?page=logs">View Visitor Logs <span>→</span></a></div></article>
-      </section>
-      <section class="content-grid">
-        <article class="card"><h2>Recent Library Visits</h2>
-          <?php if ($dashboard['recent_visits']): foreach ($dashboard['recent_visits'] as $visit): ?>
-            <div class="list-row"><div><strong><?= escapeHtml($visit['full_name']) ?></strong><small><?= escapeHtml($visit['student_number']) ?> · <?= escapeHtml($visit['purpose']) ?></small></div><time><?= escapeHtml($visit['visit_date']) ?> <?= escapeHtml($visit['time_in']) ?></time></div>
-          <?php endforeach; else: ?><p class="muted">No visits have been recorded yet.</p><?php endif; ?>
-        </article>
-        <article class="card"><h2>Latest Student Registrations</h2>
-          <?php if ($dashboard['latest_students']): foreach ($dashboard['latest_students'] as $student): ?>
-            <div class="list-row"><div><strong><?= escapeHtml($student['full_name']) ?></strong><small><?= escapeHtml($student['student_number']) ?> · <?= escapeHtml($student['program']) ?></small></div><time><?= escapeHtml(date('M j, Y', strtotime($student['created_at']))) ?></time></div>
-          <?php endforeach; else: ?><p class="muted">No student records found.</p><?php endif; ?>
-        </article>
-      </section>
-
-    <?php elseif ($page === 'students'): ?>
-      <div class="page-heading"><div><p class="eyebrow">Student records</p><h1>Student Management</h1></div><a class="button primary" href="#student-form">Add New Student</a></div>
-      <?php if ($createdStudent): ?>
-        <section class="card qr-confirmation"><div class="generated-qr" data-qr-token="<?= escapeHtml($createdStudent['qr_identifier']) ?>"></div><div><strong>Student account created: <?= escapeHtml($createdStudent['full_name']) ?></strong><p class="muted"><?= escapeHtml($createdStudent['student_number']) ?> · QR code is ready to download.</p><button type="button" class="button primary download-qr">Download QR code</button></div><button type="button" class="button secondary dismiss-qr" onclick="this.closest('.qr-confirmation').remove()">Dismiss</button></section>
-      <?php endif; ?>
-      <section class="card" id="student-form">
-        <h2>Add or Edit Student</h2>
-        <form method="post" class="form-grid">
-          <input type="hidden" name="action" value="create_student"><input type="hidden" name="page" value="students"><input type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>">
-          <?php foreach (['student_number' => 'Student ID number', 'full_name' => 'Full name', 'email' => 'Email address', 'program' => 'Course / program', 'year_level' => 'Year level'] as $field => $label): ?>
-            <label><?= escapeHtml($label) ?><input name="<?= escapeHtml($field) ?>" type="<?= $field === 'email' ? 'email' : 'text' ?>" required></label>
-          <?php endforeach; ?>
-          <div class="form-actions"><button class="button primary" type="submit">Create student and QR code</button></div>
-        </form>
-      </section>
-      <form method="get" class="search-row"><input type="hidden" name="page" value="students"><label>Search students<input name="q" value="<?= escapeHtml($query) ?>" placeholder="Search by ID, name, email, or program"></label><button class="button secondary" type="submit">Search</button></form>
-      <section class="card table-card"><div class="table-wrap"><table><thead><tr><th>Student ID</th><th>Full Name</th><th>Email</th><th>Course</th><th>Year</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-        <?php foreach ($students as $student): ?><tr>
-          <td><?= escapeHtml($student['student_number']) ?></td><td><?= escapeHtml($student['full_name']) ?></td><td><?= escapeHtml($student['email']) ?></td><td><?= escapeHtml($student['program']) ?></td><td><?= escapeHtml($student['year_level']) ?></td><td><span class="badge <?= $student['account_status'] === 'active' ? 'active' : 'inactive' ?>"><?= escapeHtml($student['account_status']) ?></span></td>
-          <td><div class="action-row"><a href="index.php?page=students&view=<?= (int) $student['id'] ?>">View</a><button type="button" class="link-button edit-student" data-id="<?= (int) $student['id'] ?>" data-student="<?= escapeHtml(json_encode($student, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP)) ?>">Edit</button>
-            <form method="post" class="confirm-action" data-confirm="<?= escapeHtml(($student['account_status'] === 'active' ? 'Deactivate ' : 'Activate ') . $student['full_name'] . '?' . ($student['account_status'] === 'active' ? ' Their visit history will be kept.' : ' Generate a new QR code before they check in.')) ?>"><input type="hidden" name="action" value="set_status"><input type="hidden" name="page" value="students"><input type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>"><input type="hidden" name="id" value="<?= (int) $student['id'] ?>"><input type="hidden" name="account_status" value="<?= $student['account_status'] === 'active' ? 'inactive' : 'active' ?>"><button class="link-button <?= $student['account_status'] === 'active' ? 'danger-text' : '' ?>" type="submit"><?= $student['account_status'] === 'active' ? 'Deactivate' : 'Activate' ?></button></form>
-            <form method="post" class="confirm-action" data-confirm="<?= escapeHtml('Permanently delete ' . $student['full_name'] . ' (' . $student['student_number'] . '), their QR code, and all visit history? This cannot be undone.') ?>"><input type="hidden" name="action" value="delete_student"><input type="hidden" name="page" value="students"><input type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>"><input type="hidden" name="id" value="<?= (int) $student['id'] ?>"><button class="link-button danger-text" type="submit">Delete</button></form>
-          </div></td>
-        </tr><?php endforeach; ?>
-        <?php if (!$students): ?><tr><td colspan="7" class="empty-state">No student records<?= $query !== '' ? ' match your search' : '' ?>.</td></tr><?php endif; ?>
-      </tbody></table></div></section>
-      <?php if ($studentProfile): ?>
-        <section class="card profile-card"><div class="page-heading"><div><p class="eyebrow">Student profile</p><h2><?= escapeHtml($studentProfile['full_name']) ?></h2></div><a class="button secondary" href="index.php?page=students">Close</a></div>
-          <dl class="profile-grid"><?php foreach (['Student ID' => $studentProfile['student_number'], 'Email' => $studentProfile['email'], 'Program' => $studentProfile['program'], 'Year level' => $studentProfile['year_level'], 'Account status' => $studentProfile['account_status'], 'QR status' => $studentProfile['qr_status'] ?: 'Not generated'] as $label => $value): ?><div><dt><?= escapeHtml($label) ?></dt><dd><?= escapeHtml($value) ?></dd></div><?php endforeach; ?></dl>
-          <h3>Visit history</h3><?php if ($studentProfile['visit_history']): ?><div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Purpose</th></tr></thead><tbody><?php foreach ($studentProfile['visit_history'] as $visit): ?><tr><td><?= escapeHtml($visit['visit_date']) ?></td><td><?= escapeHtml($visit['time_in']) ?></td><td><?= escapeHtml($visit['purpose']) ?></td></tr><?php endforeach; ?></tbody></table></div><?php else: ?><p class="muted">No visit history.</p><?php endif; ?>
-        </section>
-      <?php endif; ?>
-
-    <?php elseif ($page === 'qr-codes'): ?>
-      <div class="page-heading"><div><p class="eyebrow">Student credentials</p><h1>QR Code Management</h1></div></div>
-      <p class="muted">Generate a secure QR code for an active student. A regenerated code immediately revokes the previous code.</p>
-      <?php if ($generatedQr): ?><section class="card qr-confirmation"><div class="generated-qr" data-qr-token="<?= escapeHtml($generatedQr['qr_identifier']) ?>"></div><div><strong><?= escapeHtml($generatedQr['full_name']) ?></strong><p class="muted"><?= escapeHtml($generatedQr['student_number']) ?> · Save or print this QR code now.</p><button type="button" class="button primary download-qr">Download PNG</button></div></section><?php endif; ?>
-      <section class="student-cards">
-        <?php $activeCount = 0; foreach ($students as $student): if ($student['account_status'] !== 'active') continue; $activeCount++; ?>
-          <article class="card student-qr-card"><div class="qr-placeholder" aria-hidden="true">▦</div><h2><?= escapeHtml($student['full_name']) ?></h2><p class="muted"><?= escapeHtml($student['student_number']) ?></p><form method="post" class="confirm-action" data-confirm="<?= escapeHtml('Generate a new QR code for ' . $student['full_name'] . '? The current code will stop working.') ?>"><input type="hidden" name="action" value="generate_qr"><input type="hidden" name="page" value="qr-codes"><input type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>"><input type="hidden" name="id" value="<?= (int) $student['id'] ?>"><button class="button primary" type="submit"><?= $student['qr_status'] === 'active' ? 'Regenerate QR' : 'Generate QR' ?></button></form></article>
-        <?php endforeach; ?>
-        <?php if (!$activeCount): ?><p class="muted">No active student accounts are available.</p><?php endif; ?>
-      </section>
-
-    <?php elseif ($page === 'scanner'): ?>
-      <div class="content-grid scanner-grid"><section class="card"><div class="page-heading"><div><p class="eyebrow">Scan station</p><h1>Library Entry Scanner</h1></div></div>
-        <div class="scanner-controls"><label>Camera<select id="camera-select" disabled><option>Finding cameras…</option></select></label><label>Purpose<select id="scan-purpose"><option value="STUDY">Study</option><option value="BORROW_BOOK">Borrow book</option></select></label><button class="button secondary" id="restart-camera" type="button">Restart Camera</button></div>
-        <div id="qr-reader" class="qr-reader"></div><p id="scan-message" class="scan-message" role="status">Requesting camera access…</p><div id="scan-result" class="scan-result" hidden></div>
-      </section><section class="card"><h2>Recent Successful Scans</h2><div id="recent-scans" class="recent-scans"><?php foreach (array_slice($logs, 0, 5) as $visit): ?><div class="recent-scan"><strong><?= escapeHtml($visit['full_name']) ?></strong><span><?= escapeHtml($visit['time_in']) ?> · <?= escapeHtml($visit['purpose']) ?></span></div><?php endforeach; ?></div></section></div>
-
-    <?php elseif ($page === 'logs'): ?>
-      <div class="page-heading"><div><p class="eyebrow">Library activity</p><h1>Visitor Logs</h1></div></div>
-      <section class="card table-card"><div class="table-wrap"><table><thead><tr><th>Student ID</th><th>Student Name</th><th>Program</th><th>Year Level</th><th>Visit Date</th><th>Time In</th><th>Purpose</th></tr></thead><tbody>
-        <?php foreach ($logs as $log): ?><tr><td><?= escapeHtml($log['student_number']) ?></td><td><?= escapeHtml($log['full_name']) ?></td><td><?= escapeHtml($log['program']) ?></td><td><?= escapeHtml($log['year_level']) ?></td><td><?= escapeHtml($log['visit_date']) ?></td><td><?= escapeHtml($log['time_in']) ?></td><td><?= escapeHtml($log['purpose']) ?></td></tr><?php endforeach; ?>
-        <?php if (!$logs): ?><tr><td colspan="7" class="empty-state">No visitor logs have been recorded.</td></tr><?php endif; ?>
-      </tbody></table></div></section>
-
-    <?php elseif ($page === 'reports'): ?>
-      <div class="page-heading"><div><p class="eyebrow">Library activity</p><h1>Reports and Analytics</h1></div></div><section class="card"><p class="muted">Daily, monthly, and quarterly visitor statistics will appear here.</p></section>
-
-    <?php elseif ($page === 'settings'): ?>
-      <div class="page-heading"><div><p class="eyebrow">System configuration</p><h1>Settings</h1></div></div><section class="card"><p class="muted">Duplicate check-in prevention is enforced once per student per day. Visit purpose can be selected at the scanner.</p></section>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php if ($page === 'dashboard'): ?>
+        <meta http-equiv="refresh" content="15"><?php endif; ?>
+    <title><?= escapeHtml($pageTitles[$page]) ?> | SSU Library</title>
+    <link rel="stylesheet" href="<?= escapeHtml($basePath) ?>/assets/php-app.css">
+    <?php if ($page === 'students' || $page === 'qr-codes'): ?>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <?php endif; ?>
-  </main>
-</div>
-<script>
-window.LibraryApp = <?= json_encode([
-    'csrfToken' => $csrfToken,
-    'scanEndpoint' => $basePath . '/api/scanner/scan.php',
-    'qrLibraryPage' => $page === 'students' || $page === 'qr-codes',
-    'scannerPage' => $page === 'scanner'
-], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-</script>
-<script src="<?= escapeHtml($basePath) ?>/assets/php-app.js" defer></script>
+    <?php if ($page === 'scanner'): ?>
+        <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+    <?php endif; ?>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="index.php?page=dashboard">
+                <span class="brand-mark">SSU</span>
+                <span><small>Library</small><strong>QR Entry</strong></span>
+            </a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <?php foreach ($pageTitles as $key => $label): ?>
+                    <a class="nav-link <?= $page === $key ? 'active' : '' ?>" href="index.php?page=<?= escapeHtml($key) ?>">
+                        <span
+                            aria-hidden="true"><?= ['dashboard' => '▦', 'students' => '♙', 'qr-codes' => '▦', 'scanner' => '▣', 'logs' => '◷', 'reports' => '▥', 'settings' => '⚙'][$key] ?></span><?= escapeHtml($label) ?>
+                    </a>
+                <?php endforeach; ?>
+            </nav>
+            <form method="post" class="logout-form">
+                <input type="hidden" name="action" value="logout">
+                <input type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>">
+                <button class="nav-link logout-link" type="submit"><span aria-hidden="true">↪</span>Logout</button>
+            </form>
+            <div class="sidebar-user">
+                <strong><?= escapeHtml($admin['full_name']) ?></strong><span><?= escapeHtml($admin['email']) ?></span>
+            </div>
+        </aside>
+        <main class="main-content">
+            <header class="mobile-header">
+                <a class="brand" href="index.php?page=dashboard"><span
+                        class="brand-mark">SSU</span><span><small>Library</small><strong>QR Entry</strong></span></a>
+                <button class="button secondary mobile-menu-button" type="button"
+                    onclick="document.body.classList.toggle('nav-open')">Menu</button>
+            </header>
+            <nav class="mobile-nav" aria-label="Mobile navigation">
+                <?php foreach ($pageTitles as $key => $label): ?><a
+                        href="index.php?page=<?= escapeHtml($key) ?>"><?= escapeHtml($label) ?></a><?php endforeach; ?>
+                <form method="post"><input type="hidden" name="action" value="logout"><input type="hidden"
+                        name="csrf_token" value="<?= escapeHtml($csrfToken) ?>"><button type="submit">Logout</button>
+                </form>
+            </nav>
+            <?php if ($flashMessage): ?>
+                <div class="alert success" role="status"><?= escapeHtml($flashMessage) ?></div><?php endif; ?>
+            <?php if ($flashError): ?>
+                <div class="alert error" role="alert"><?= escapeHtml($flashError) ?></div><?php endif; ?>
+            <?php if ($dbError): ?>
+                <div class="alert error" role="alert">Data could not be loaded: <?= escapeHtml($dbError) ?></div>
+            <?php endif; ?>
+
+            <?php require __DIR__ . '/pages/' . $page . '.php'; ?>
+        </main>
+    </div>
+    <script>
+        window.LibraryApp = <?= json_encode([
+            'csrfToken' => $csrfToken,
+            'scanEndpoint' => $basePath . '/api/scanner/scan.php',
+            'qrLibraryPage' => $page === 'students' || $page === 'qr-codes',
+            'scannerPage' => $page === 'scanner'
+        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+    </script>
+    <script src="<?= escapeHtml($basePath) ?>/assets/php-app.js" defer></script>
 </body>
+
 </html>
