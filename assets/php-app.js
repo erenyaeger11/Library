@@ -38,22 +38,33 @@
     }
     new window.QRCode(container, {
       text: token,
-      width: 128,
-      height: 128,
+      width: 256,
+      height: 256,
       correctLevel: window.QRCode.CorrectLevel.H
     });
     const downloadButton = container.closest('.qr-confirmation')?.querySelector('.download-qr');
     downloadButton?.addEventListener('click', () => {
       const image = container.querySelector('img');
-      const canvas = container.querySelector('canvas');
-      const dataUrl = image?.src || canvas?.toDataURL('image/png');
-      if (!dataUrl) {
+      const qrCanvas = container.querySelector('canvas');
+      const qrSource = qrCanvas || image;
+      if (!qrSource || (image && qrSource === image && !image.complete)) {
         window.alert('The QR code is not ready. Please wait and try again.');
         return;
       }
+      const outputCanvas = document.createElement('canvas');
+      outputCanvas.width = 284;
+      outputCanvas.height = 284;
+      const context = outputCanvas.getContext('2d');
+      if (!context) {
+        window.alert('The QR code could not be prepared for download. Please try again.');
+        return;
+      }
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+      context.drawImage(qrSource, 14, 14, 256, 256);
       const link = document.createElement('a');
       const studentNumber = container.closest('.qr-confirmation')?.querySelector('p')?.textContent?.split('·')[0]?.trim() || 'student';
-      link.href = dataUrl;
+      link.href = outputCanvas.toDataURL('image/png');
       link.download = `${studentNumber}-library-qr.png`;
       link.click();
     });

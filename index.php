@@ -73,6 +73,8 @@ $basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')
 if ($basePath === '.') {
     $basePath = '';
 }
+$cssVersion = (string) filemtime(__DIR__ . '/assets/php-app.css');
+$jsVersion = (string) filemtime(__DIR__ . '/assets/php-app.js');
 $flashMessage = getFlash('message');
 $flashError = getFlash('error');
 $createdStudent = getFlash('created_student');
@@ -284,9 +286,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
             $qr = $pdo->prepare(
                 'INSERT INTO student_qr_codes (student_id, qr_identifier_hash, status)
-                 VALUES (:student_id, :identifier_hash, :status)
-                 ON DUPLICATE KEY UPDATE qr_identifier_hash = VALUES(qr_identifier_hash),
-                   status = VALUES(status), created_at = CURRENT_TIMESTAMP, revoked_at = NULL'
+                 VALUES (:student_id, :identifier_hash, :status)'
             );
             $qr->execute([
                 ':student_id' => $studentId,
@@ -368,15 +368,17 @@ try {
     } elseif ($page === 'students' || $page === 'qr-codes') {
         $students = db()->query(
             'SELECT s.id, s.student_number, s.full_name, s.email, s.program, s.year_level,
-                    s.account_status, s.created_at, q.status AS qr_status
-             FROM students s LEFT JOIN student_qr_codes q ON q.student_id = s.id
+                    s.account_status, s.created_at,
+                    (SELECT q.status FROM student_qr_codes q WHERE q.student_id = s.id ORDER BY q.created_at DESC, q.id DESC LIMIT 1) AS qr_status
+             FROM students s
              ORDER BY s.created_at DESC'
         )->fetchAll();
         if (isset($_GET['view'])) {
             $profileStmt = db()->prepare(
                 'SELECT s.id, s.student_number, s.full_name, s.email, s.program, s.year_level,
-                        s.account_status, s.created_at, q.status AS qr_status
-                 FROM students s LEFT JOIN student_qr_codes q ON q.student_id = s.id
+                        s.account_status, s.created_at,
+                        (SELECT q.status FROM student_qr_codes q WHERE q.student_id = s.id ORDER BY q.created_at DESC, q.id DESC LIMIT 1) AS qr_status
+                 FROM students s
                  WHERE s.id = :id LIMIT 1'
             );
             $profileStmt->execute([':id' => (int) $_GET['view']]);
@@ -427,7 +429,7 @@ foreach (($dashboard['activity'] ?? []) as $day) {
     <?php if ($page === 'dashboard'): ?>
         <meta http-equiv="refresh" content="15"><?php endif; ?>
     <title><?= escapeHtml($pageTitles[$page]) ?> | SSU Library</title>
-    <link rel="stylesheet" href="<?= escapeHtml($basePath) ?>/assets/php-app.css">
+    <link rel="stylesheet" href="<?= escapeHtml($basePath) ?>/assets/php-app.css?v=<?= escapeHtml($cssVersion) ?>">
     <?php if ($page === 'students' || $page === 'qr-codes'): ?>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
     <?php endif; ?>
@@ -493,7 +495,7 @@ foreach (($dashboard['activity'] ?? []) as $day) {
             'scannerPage' => $page === 'scanner'
         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     </script>
-    <script src="<?= escapeHtml($basePath) ?>/assets/php-app.js" defer></script>
+    <script src="<?= escapeHtml($basePath) ?>/assets/php-app.js?v=<?= escapeHtml($jsVersion) ?>" defer></script>
 </body>
 
 </html>

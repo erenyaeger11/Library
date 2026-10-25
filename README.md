@@ -21,16 +21,17 @@ Alternatively, put the project under XAMPP's `htdocs`, run `composer install` fr
 Vercel does not execute this PHP application. Deploy the project to a PHP-capable host that provides MySQL/MariaDB, or use a PHP server with a separately managed database.
 
 1. Create a production database and import `sql/ssu_library_qr.sql`.
-2. Upload the PHP project, including `index.php`, `pages/`, `api/`, and `assets/`, to the host's web root. Keep `vendor/` available by running `composer install --no-dev` in the project folder (or upload the generated `vendor/` directory).
-3. Set `APP_ENV=production`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASS` in the host's environment settings or private `.env` file. Never publish database credentials.
-4. Point the domain's document root at this project and enable HTTPS.
-5. Visit the domain and sign in. Do not expect Vercel to run PHP files.
+2. For an existing database, run `ALTER TABLE student_qr_codes DROP INDEX uq_student_qr_student;` once to allow multiple QR identifiers per student.
+3. Upload the PHP project, including `index.php`, `pages/`, `api/`, and `assets/`, to the host's web root. Keep `vendor/` available by running `composer install --no-dev` in the project folder (or upload the generated `vendor/` directory).
+4. Set `APP_ENV=production`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASS` in the host's environment settings or private `.env` file. Never publish database credentials.
+5. Point the domain's document root at this project and enable HTTPS.
+6. Visit the domain and sign in. Do not expect Vercel to run PHP files.
 
 ## Features
 - Admin session-based login and logout
 - Dashboard metrics, seven-day visitor activity, recent visits, and registrations
 - Student creation, search, profile/history view, edit, activate/deactivate, and permanent deletion
-- QR code generation and download; a replaced code immediately revokes the previous one
+- QR code generation and download; previously issued codes remain valid while the student account is active
 - Live QR camera scanner with selectable camera and visit purpose
 - Visitor logs
 
@@ -45,6 +46,7 @@ The QR-generation and camera scripts load from public CDNs, so the browser needs
 - **Read:** Browse the student directory and open a profile to see visit history.
 - **Update:** Select **Edit**, change the information, and save.
 - **Deactivate:** This disables the account and QR but preserves history. Reactivation requires a replacement QR before check-in.
+- **QR codes:** Generating another QR does not invalidate earlier copies. Deactivating a student revokes all their QR codes.
 - **Delete permanently:** This deletes the student account, QR, and all associated visit history. This cannot be undone.
 
 ## Default admin user

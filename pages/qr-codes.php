@@ -5,8 +5,8 @@
     <h1>QR Code Management</h1>
   </div>
 </div>
-<p class="muted">Generate a secure QR code for an active student. A regenerated code immediately revokes the previous
-  code.</p>
+<p class="muted">Generate a QR code for an active student. Previously issued QR codes stay valid while the student's
+  account remains active, so students can keep using a saved or printed copy.</p>
 <?php if ($generatedQr): ?>
   <section class="card qr-confirmation">
     <div class="generated-qr" data-qr-token="<?= escapeHtml($generatedQr['qr_identifier']) ?>"></div>
@@ -26,11 +26,11 @@
       <h2><?= escapeHtml($student['full_name']) ?></h2>
       <p class="muted"><?= escapeHtml($student['student_number']) ?></p>
       <form method="post" class="confirm-action"
-        data-confirm="<?= escapeHtml('Generate a new QR code for ' . $student['full_name'] . '? The current code will stop working.') ?>">
+        data-confirm="<?= escapeHtml('Generate an additional QR code for ' . $student['full_name'] . '? Previously issued codes will continue to work.') ?>">
         <input type="hidden" name="action" value="generate_qr"><input type="hidden" name="page" value="qr-codes"><input
           type="hidden" name="csrf_token" value="<?= escapeHtml($csrfToken) ?>"><input type="hidden" name="id"
           value="<?= (int) $student['id'] ?>"><button class="button primary"
-          type="submit"><?= $student['qr_status'] === 'active' ? 'Regenerate QR' : 'Generate QR' ?></button></form>
+          type="submit"><?= $student['qr_status'] === 'active' ? 'Generate Additional QR' : 'Generate QR' ?></button></form>
     </article>
   <?php endforeach; ?>
   <?php if (!$activeCount): ?>

@@ -16,9 +16,9 @@ if ($id <= 0) {
 
 $stmt = db()->prepare(
     'SELECT s.id, s.student_number, s.full_name, s.email, s.program, s.year_level,
-            s.account_status, s.created_at, s.updated_at, q.status AS qr_status
+            s.account_status, s.created_at, s.updated_at,
+            (SELECT q.status FROM student_qr_codes q WHERE q.student_id = s.id ORDER BY q.created_at DESC, q.id DESC LIMIT 1) AS qr_status
      FROM students s
-     LEFT JOIN student_qr_codes q ON q.student_id = s.id
      WHERE s.id = :id
      LIMIT 1'
 );

@@ -430,11 +430,13 @@ tbody tr:last-child td {
 }
 .generated-qr {
   display: grid;
-  width: 132px;
-  height: 132px;
+  box-sizing: border-box;
+  width: 284px;
+  height: 284px;
   flex: none;
   place-items: center;
   background: white;
+  padding: 14px;
 }
 .generated-qr img,
 .generated-qr canvas {

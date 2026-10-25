@@ -34,8 +34,7 @@ try {
     $pdo->beginTransaction();
     $qrStmt = $pdo->prepare(
         'INSERT INTO student_qr_codes (student_id, qr_identifier_hash, status)
-         VALUES (:student_id, :identifier_hash, :status)
-         ON DUPLICATE KEY UPDATE qr_identifier_hash = VALUES(qr_identifier_hash), status = VALUES(status), created_at = CURRENT_TIMESTAMP, revoked_at = NULL'
+         VALUES (:student_id, :identifier_hash, :status)'
     );
     $qrStmt->execute([
         ':student_id' => $studentId,
