@@ -1,6 +1,6 @@
 <?php
 /**
- * Revokes/replaces a student's QR identifier and returns the new secret once.
+ * Makes another QR code for a student.
  *
  * @endpoint POST /api/students/regenerate-qr.php
  * @auth Required
@@ -73,4 +73,4 @@ try {
         'message' => 'QR code generation failed',
         'error' => APP_ENV === 'development' ? $e->getMessage() : null
     ], 500);
-}
+} // End: make QR code

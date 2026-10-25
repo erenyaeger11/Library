@@ -1,6 +1,6 @@
 <?php
 /**
- * Returns live student metrics, visit activity, recent visits, and registrations.
+ * Gets dashboard counts and recent activity.
  *
  * @endpoint GET /api/reports/dashboard.php
  * @auth Required
@@ -72,4 +72,4 @@ try {
     ]);
 } catch (Throwable $e) {
     jsonResponse(['success' => false, 'message' => 'Dashboard metrics unavailable', 'error' => APP_ENV === 'development' ? $e->getMessage() : null], 500);
-}
+} // End: dashboard report

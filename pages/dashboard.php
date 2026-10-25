@@ -68,3 +68,4 @@
     </article>
   </section>
 <?php endif; ?>
+<!-- End: dashboard page -->

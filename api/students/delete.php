@@ -1,6 +1,6 @@
 <?php
 /**
- * Permanently deletes a student, their QR code, and their visit history.
+ * Deletes a student and their records.
  *
  * @endpoint POST /api/students/delete.php
  * @auth Required
@@ -60,4 +60,4 @@ try {
         'message' => 'Unable to delete student',
         'error' => APP_ENV === 'development' ? $e->getMessage() : null
     ], 500);
-}
+} // End: delete student

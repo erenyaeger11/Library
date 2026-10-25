@@ -8,3 +8,4 @@
 <section class="card">
     <p class="muted">Daily, monthly, and quarterly visitor statistics will appear here.</p>
 </section>
+<!-- End: reports page -->

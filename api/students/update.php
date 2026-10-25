@@ -1,6 +1,6 @@
 <?php
 /**
- * Updates provided fields on an existing student record.
+ * Updates a student's details.
  *
  * @endpoint POST /api/students/update.php
  * @auth Required
@@ -90,4 +90,4 @@ try {
         db()->rollBack();
     }
     jsonResponse(['success' => false, 'message' => 'Student update failed', 'error' => APP_ENV === 'development' ? $e->getMessage() : null], 500);
-}
+} // End: update student

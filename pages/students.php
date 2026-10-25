@@ -122,3 +122,4 @@
       <p class="muted">No visit history.</p><?php endif; ?>
   </section>
 <?php endif; ?>
+<!-- End: students page -->

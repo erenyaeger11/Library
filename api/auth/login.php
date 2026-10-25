@@ -1,6 +1,6 @@
 <?php
 /**
- * Authenticates an administrator and creates a secure PHP session.
+ * Signs in an administrator.
  *
  * @endpoint POST /api/auth/login.php
  * @auth Public
@@ -21,7 +21,7 @@ if ($email === '' || $password === '') {
 }
 
 try {
-    // [DATABASE QUERY] Bind the submitted email instead of inserting input into SQL text.
+    // Finds the admin by email.
     $stmt = db()->prepare('SELECT * FROM admins WHERE email = :email LIMIT 1');
     $stmt->execute([':email' => $email]);
     $admin = $stmt->fetch();
@@ -47,4 +47,4 @@ try {
     ]);
 } catch (Throwable $e) {
     jsonResponse(['success' => false, 'message' => 'Login failed', 'error' => APP_ENV === 'development' ? $e->getMessage() : null], 500);
-}
+} // End: admin login

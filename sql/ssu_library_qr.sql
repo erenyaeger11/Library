@@ -98,3 +98,4 @@ VALUES (
         '$2y$10$wqmhAr9zRNrYmZ2YretKBe/KZRRV0u4AEk5S1Dr3JMkjQ2LoKNCbu',
         'super_admin'
     );
+-- End: database setup

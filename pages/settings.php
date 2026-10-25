@@ -9,3 +9,4 @@
     <p class="muted">Duplicate check-in prevention is enforced once per student per day. Visit purpose can be selected
         at the scanner.</p>
 </section>
+<!-- End: settings page -->

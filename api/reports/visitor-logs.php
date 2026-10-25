@@ -1,6 +1,6 @@
 <?php
 /**
- * Returns the latest visitor log records with student details.
+ * Gets recent library visits.
  *
  * @endpoint GET /api/reports/visitor-logs.php
  * @auth Required
@@ -25,4 +25,4 @@ try {
         'message' => 'Visitor logs unavailable',
         'error' => APP_ENV === 'development' ? $e->getMessage() : null
     ], 500);
-}
+} // End: visit report

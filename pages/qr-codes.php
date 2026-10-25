@@ -61,3 +61,4 @@
   <p class="muted">No active student accounts are available.</p>
   <?php endif; ?>
 </section>
+<!-- End: QR codes page -->

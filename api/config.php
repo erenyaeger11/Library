@@ -2,13 +2,13 @@
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
-// [DATABASE CONFIGURATION] Load private settings from .env without replacing server-level environment values.
+// Loads the app settings from .env.
 Dotenv\Dotenv::createImmutable(dirname(__DIR__))->safeLoad();
 
 define('APP_ENV', $_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: 'development');
 
 /**
- * Reads an environment variable with an optional fallback value.
+ * Gets a setting, or uses its default value.
  *
  * @param string $name Environment variable name.
  * @param string $default Value returned when the variable is unset.
@@ -22,11 +22,10 @@ function appEnv(string $name, string $default = ''): string
     }
 
     return isset($_ENV[$name]) ? (string) $_ENV[$name] : $default;
-}
+} // End: setting helper
 
 /**
- * [DATABASE CONFIGURATION] Collects the MySQL host, port, database, username, and password.
- * Environment values override the local-development defaults.
+ * Gets the database connection settings.
  */
 function getDbConfig(): array
 {
@@ -38,11 +37,10 @@ function getDbConfig(): array
         'pass' => appEnv('DB_PASS'),
         'charset' => 'utf8mb4'
     ];
-}
+} // End: database settings
 
 /**
- * [DATABASE CONNECTION] Builds the PDO MySQL connection once per request and reuses it.
- * Exceptions expose query/connection failures; associative fetches simplify API responses.
+ * Connects to MySQL and reuses the connection.
  */
 function db(): PDO
 {
@@ -68,10 +66,10 @@ function db(): PDO
     ]);
 
     return $pdo;
-}
+} // End: database connection
 
 /**
- * [API RESPONSE] Sends a JSON payload with its HTTP status, then ends the request.
+ * Sends a JSON reply and ends the request.
  *
  * @param array $payload Response data to encode.
  * @param int $status HTTP status code.
@@ -82,9 +80,9 @@ function jsonResponse(array $payload, int $status = 200): void
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     exit;
-}
+} // End: JSON reply
 
-/** [API AUTHENTICATION] Requires an administrator session and returns its identity. */
+/** Checks that an admin is signed in. */
 function requireAuth(): array
 {
     startSession();
@@ -94,7 +92,7 @@ function requireAuth(): array
     }
 
     return $_SESSION['admin'];
-}
+} // End: admin check
 
 /** Starts a secure PHP session if the request has not started one already. */
 function startSession(): void
@@ -111,9 +109,9 @@ function startSession(): void
         'samesite' => 'Lax'
     ]);
     session_start();
-}
+} // End: session setup
 
-/** [API REQUEST] Decodes a JSON request body so endpoint handlers can validate its fields. */
+/** Reads JSON sent to the API. */
 function readJsonBody(): array
 {
     $raw = file_get_contents('php://input');
@@ -123,9 +121,9 @@ function readJsonBody(): array
 
     $decoded = json_decode($raw, true);
     return is_array($decoded) ? $decoded : [];
-}
+} // End: read JSON
 
-/** Trims a string and removes HTML tags before storing user-provided text. */
+/** Cleans text before saving it. */
 function sanitizeString(?string $value): ?string
 {
     if ($value === null) {
@@ -133,19 +131,18 @@ function sanitizeString(?string $value): ?string
     }
 
     return trim(strip_tags($value));
-}
+} // End: clean text
 
 /**
- * [QR TOKEN GENERATION] Creates 32 random bytes and encodes them as a 64-character hex token.
- * This raw token is placed in the QR and shown once; the database stores only its HMAC hash.
+ * Makes a random QR token. Only its hash is saved in the database.
  */
 function generateQrIdentifier(): string
 {
     return bin2hex(random_bytes(32));
-}
+} // End: make QR token
 
-/** [QR TOKEN VALIDATION] Uses the same secret-keyed hash for storage and later scanner lookups. */
+/** Hashes a QR token so the scanner can find it in the database. */
 function hashQrIdentifier(string $identifier): string
 {
     return hash_hmac('sha256', $identifier, appEnv('QR_HASH_SECRET', 'ssu-library-qr-secret'));
-}
+} // End: hash QR token

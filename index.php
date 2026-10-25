@@ -499,3 +499,4 @@ foreach (($dashboard['activity'] ?? []) as $day) {
 </body>
 
 </html>
+<!-- End: main page -->

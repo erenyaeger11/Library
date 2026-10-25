@@ -1,6 +1,6 @@
 <?php
 /**
- * Lists student directory records and QR/account statuses.
+ * Gets the student list.
  *
  * @endpoint GET /api/students/list.php
  * @auth Required
@@ -16,3 +16,4 @@ $stmt = db()->query($sql);
 $students = $stmt->fetchAll();
 
 jsonResponse(['success' => true, 'data' => $students]);
+// End: student list

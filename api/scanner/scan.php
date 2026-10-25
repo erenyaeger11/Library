@@ -1,6 +1,6 @@
 <?php
 /**
- * Validates an active student's QR identifier and records one daily visit.
+ * Checks a QR code and records the student's visit.
  *
  * @endpoint POST /api/scanner/scan.php
  * @auth Required
@@ -21,7 +21,7 @@ if ($identifier === '') {
 $hash = hashQrIdentifier((string) $identifier);
 
 try {
-    // [QR LOOKUP QUERY] Match the scanned token's HMAC against stored hashes, then read its student.
+    // Finds the QR token and its student.
     $stmt = db()->prepare(
         'SELECT s.*, q.qr_identifier_hash, q.status AS qr_status FROM students s INNER JOIN student_qr_codes q ON q.student_id = s.id WHERE q.qr_identifier_hash = :hash LIMIT 1'
     );
@@ -79,4 +79,4 @@ try {
     ]);
 } catch (Throwable $e) {
     jsonResponse(['success' => false, 'message' => 'Scanner processing failed', 'error' => APP_ENV === 'development' ? $e->getMessage() : null], 500);
-}
+} // End: scan and log visit

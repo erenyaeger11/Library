@@ -38,3 +38,4 @@
     </table>
   </div>
 </section>
+<!-- End: visit logs page -->

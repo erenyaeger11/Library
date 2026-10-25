@@ -36,7 +36,7 @@
       container.textContent = 'QR library unavailable. Check your internet connection and reload.';
       return;
     }
-    // [QR CODE GENERATOR] qrcodejs turns the one-time server token into a scannable QR image.
+    // Turns the token into a QR image.
     new window.QRCode(container, {
       text: token,
       width: 256,
@@ -68,8 +68,8 @@
       link.href = outputCanvas.toDataURL('image/png');
       link.download = `${studentNumber}-library-qr.png`;
       link.click();
-    });
-  });
+    }); // End: QR download
+  }); // End: QR generator
 
   if (!app.scannerPage) return;
   const message = document.getElementById('scan-message');
@@ -93,7 +93,7 @@
     resultBox.hidden = true;
     setScanMessage('Checking QR code with the library database…');
     try {
-      // [SCANNER API REQUEST] Send decoded text and visit purpose to PHP with the admin session cookie.
+      // Sends the scanned code to the server.
       const response = await fetch(app.scanEndpoint, {
         method: 'POST',
         credentials: 'same-origin',
@@ -131,7 +131,7 @@
     } finally {
       window.setTimeout(() => { busy = false; }, 1800);
     }
-  }
+  } // End: handle scanned code
 
   async function startCamera(cameraId) {
     if (typeof window.Html5Qrcode !== 'function') {
@@ -142,7 +142,7 @@
       if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
         throw new Error('Camera access requires HTTPS or localhost.');
       }
-      // [CAMERA SCANNER] html5-qrcode requests the selected device stream and decodes QR frames in-browser.
+      // Starts the selected camera and reads QR codes.
       if (scanner?.isScanning) await scanner.stop();
       if (scanner) await scanner.clear();
       scanner = new window.Html5Qrcode(reader.id, {
@@ -168,7 +168,7 @@
             : error.message || 'Could not start camera. Check browser permissions and webcam availability.';
       setScanMessage(detail, 'error');
     }
-  }
+  } // End: start camera
 
   async function findCameras() {
     try {
@@ -194,7 +194,7 @@
     } catch (error) {
       setScanMessage(error.message || 'Unable to find a camera.', 'error');
     }
-  }
+  } // End: find cameras
 
   cameraSelect.addEventListener('change', () => startCamera(cameraSelect.value));
   restartButton.addEventListener('click', findCameras);
@@ -202,4 +202,4 @@
     if (scanner?.isScanning) scanner.stop().catch((error) => console.error('Unable to stop scanner:', error));
   });
   findCameras();
-})();
+})(); // End: app script

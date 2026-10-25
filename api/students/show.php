@@ -1,6 +1,6 @@
 <?php
 /**
- * Returns one student profile and its QR status.
+ * Gets one student's details and visit history.
  *
  * @endpoint GET /api/students/show.php?id={id}
  * @auth Required
@@ -40,3 +40,4 @@ $historyStmt->execute([':student_id' => $id]);
 $student['visit_history'] = $historyStmt->fetchAll();
 
 jsonResponse(['success' => true, 'data' => $student]);
+// End: student profile

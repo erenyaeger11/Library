@@ -1,6 +1,6 @@
 <?php
 /**
- * Creates a student account and its unique QR identifier in one transaction.
+ * Creates a student and their QR code.
  *
  * @endpoint POST /api/students/create.php
  * @auth Required
@@ -77,4 +77,4 @@ try {
         db()->rollBack();
     }
     jsonResponse(['success' => false, 'message' => 'Student creation failed', 'error' => APP_ENV === 'development' ? $e->getMessage() : null], 500);
-}
+} // End: create student

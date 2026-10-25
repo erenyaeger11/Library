@@ -1,6 +1,6 @@
 <?php
 /**
- * Activates or deactivates a student without deleting their history.
+ * Activates or deactivates a student.
  *
  * @endpoint POST /api/students/set-status.php
  * @auth Required
@@ -71,4 +71,4 @@ try {
         'message' => 'Unable to change student status',
         'error' => APP_ENV === 'development' ? $e->getMessage() : null
     ], 500);
-}
+} // End: student status

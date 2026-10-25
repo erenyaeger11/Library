@@ -1,6 +1,6 @@
 <?php
 /**
- * Clears the current administrator session and expires its cookie.
+ * Signs out the administrator.
  *
  * @endpoint POST /api/auth/logout.php
  * @auth Session-based
@@ -17,3 +17,4 @@ if (ini_get('session.use_cookies')) {
 
 session_destroy();
 jsonResponse(['success' => true, 'message' => 'Logged out successfully']);
+// End: admin logout
