@@ -21,6 +21,7 @@ if ($email === '' || $password === '') {
 }
 
 try {
+    // [DATABASE QUERY] Bind the submitted email instead of inserting input into SQL text.
     $stmt = db()->prepare('SELECT * FROM admins WHERE email = :email LIMIT 1');
     $stmt->execute([':email' => $email]);
     $admin = $stmt->fetch();

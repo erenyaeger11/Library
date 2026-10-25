@@ -36,6 +36,7 @@
       container.textContent = 'QR library unavailable. Check your internet connection and reload.';
       return;
     }
+    // [QR CODE GENERATOR] qrcodejs turns the one-time server token into a scannable QR image.
     new window.QRCode(container, {
       text: token,
       width: 256,
@@ -92,6 +93,7 @@
     resultBox.hidden = true;
     setScanMessage('Checking QR code with the library database…');
     try {
+      // [SCANNER API REQUEST] Send decoded text and visit purpose to PHP with the admin session cookie.
       const response = await fetch(app.scanEndpoint, {
         method: 'POST',
         credentials: 'same-origin',
@@ -140,6 +142,7 @@
       if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
         throw new Error('Camera access requires HTTPS or localhost.');
       }
+      // [CAMERA SCANNER] html5-qrcode requests the selected device stream and decodes QR frames in-browser.
       if (scanner?.isScanning) await scanner.stop();
       if (scanner) await scanner.clear();
       scanner = new window.Html5Qrcode(reader.id, {

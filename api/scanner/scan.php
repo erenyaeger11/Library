@@ -21,6 +21,7 @@ if ($identifier === '') {
 $hash = hashQrIdentifier((string) $identifier);
 
 try {
+    // [QR LOOKUP QUERY] Match the scanned token's HMAC against stored hashes, then read its student.
     $stmt = db()->prepare(
         'SELECT s.*, q.qr_identifier_hash, q.status AS qr_status FROM students s INNER JOIN student_qr_codes q ON q.student_id = s.id WHERE q.qr_identifier_hash = :hash LIMIT 1'
     );

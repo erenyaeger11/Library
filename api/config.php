@@ -2,6 +2,7 @@
 
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
+// [DATABASE CONFIGURATION] Load private settings from .env without replacing server-level environment values.
 Dotenv\Dotenv::createImmutable(dirname(__DIR__))->safeLoad();
 
 define('APP_ENV', $_ENV['APP_ENV'] ?? getenv('APP_ENV') ?: 'development');
@@ -23,7 +24,10 @@ function appEnv(string $name, string $default = ''): string
     return isset($_ENV[$name]) ? (string) $_ENV[$name] : $default;
 }
 
-/** Returns the MySQL connection settings from environment variables. */
+/**
+ * [DATABASE CONFIGURATION] Collects the MySQL host, port, database, username, and password.
+ * Environment values override the local-development defaults.
+ */
 function getDbConfig(): array
 {
     return [
@@ -36,7 +40,10 @@ function getDbConfig(): array
     ];
 }
 
-/** Opens and reuses the PDO connection to the configured MySQL database. */
+/**
+ * [DATABASE CONNECTION] Builds the PDO MySQL connection once per request and reuses it.
+ * Exceptions expose query/connection failures; associative fetches simplify API responses.
+ */
 function db(): PDO
 {
     static $pdo = null;
@@ -64,7 +71,7 @@ function db(): PDO
 }
 
 /**
- * Sends a JSON response and ends the request.
+ * [API RESPONSE] Sends a JSON payload with its HTTP status, then ends the request.
  *
  * @param array $payload Response data to encode.
  * @param int $status HTTP status code.
@@ -77,7 +84,7 @@ function jsonResponse(array $payload, int $status = 200): void
     exit;
 }
 
-/** Requires a logged-in administrator and returns the session identity. */
+/** [API AUTHENTICATION] Requires an administrator session and returns its identity. */
 function requireAuth(): array
 {
     startSession();
@@ -106,7 +113,7 @@ function startSession(): void
     session_start();
 }
 
-/** Decodes a JSON request body into an associative array. */
+/** [API REQUEST] Decodes a JSON request body so endpoint handlers can validate its fields. */
 function readJsonBody(): array
 {
     $raw = file_get_contents('php://input');
@@ -128,13 +135,16 @@ function sanitizeString(?string $value): ?string
     return trim(strip_tags($value));
 }
 
-/** Creates a cryptographically random QR identifier for a student. */
+/**
+ * [QR TOKEN GENERATION] Creates 32 random bytes and encodes them as a 64-character hex token.
+ * This raw token is placed in the QR and shown once; the database stores only its HMAC hash.
+ */
 function generateQrIdentifier(): string
 {
     return bin2hex(random_bytes(32));
 }
 
-/** Produces the database hash used to look up a QR identifier securely. */
+/** [QR TOKEN VALIDATION] Uses the same secret-keyed hash for storage and later scanner lookups. */
 function hashQrIdentifier(string $identifier): string
 {
     return hash_hmac('sha256', $identifier, appEnv('QR_HASH_SECRET', 'ssu-library-qr-secret'));

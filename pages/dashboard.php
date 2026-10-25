@@ -49,7 +49,8 @@
                 <?= escapeHtml($visit['purpose']) ?></small></div><time><?= escapeHtml($visit['visit_date']) ?>
               <?= escapeHtml($visit['time_in']) ?></time>
           </div>
-        <?php endforeach; else: ?>
+        <?php endforeach;
+      else: ?>
         <p class="muted">No visits have been recorded yet.</p><?php endif; ?>
     </article>
     <article class="card">
@@ -61,7 +62,8 @@
                 · <?= escapeHtml($student['program']) ?></small></div>
             <time><?= escapeHtml(date('M j, Y', strtotime($student['created_at']))) ?></time>
           </div>
-        <?php endforeach; else: ?>
+        <?php endforeach;
+      else: ?>
         <p class="muted">No student records found.</p><?php endif; ?>
     </article>
   </section>
