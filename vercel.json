@@ -1,9 +1,30 @@
+
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["iad1"]
   "functions": {
-    "api/**/*": {
-      "maxDuration": 30
+    "api/index.php": {
+      "runtime": "vercel-php@0.9.0"
+    },
+    "api/auth/*.php": {
+      "runtime": "vercel-php@0.9.0"
+    },
+    "api/reports/*.php": {
+      "runtime": "vercel-php@0.9.0"
+    },
+    "api/scanner/*.php": {
+      "runtime": "vercel-php@0.9.0"
+    },
+    "api/students/*.php": {
+      "runtime": "vercel-php@0.9.0"
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/index.php"
+    },
+    {
+      "source": "/index.php",
+      "destination": "/api/index.php"
+    }
+  ]
 }
