@@ -1,4 +1,4 @@
-/*CREATE DATABASE IF NOT EXISTS ssu_library_qr CHARACTER SET utf8mb4;
+CREATE DATABASE IF NOT EXISTS ssu_library_qr CHARACTER SET utf8mb4;
 
 USE ssu_library_qr;
 
@@ -94,4 +94,4 @@ VALUES (
         '$2y$10$wqmhAr9zRNrYmZ2YretKBe/KZRRV0u4AEk5S1Dr3JMkjQ2LoKNCbu',
         'super_admin'
     );
--- End: database setup */
+-- End: database setup 
