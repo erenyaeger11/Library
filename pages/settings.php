@@ -6,7 +6,7 @@
     </div>
 </div>
 <section class="card">
-    <p class="muted">Duplicate check-in prevention is enforced once per student per day. Visit purpose can be selected
-        at the scanner.</p>
+    <p class="muted">Every successful QR scan is recorded, including multiple visits by the same student in one day.
+        Visit purpose can be selected at the scanner.</p>
 </section>
 <!-- End: settings page -->

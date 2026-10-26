@@ -40,12 +40,6 @@ try {
         jsonResponse(['success' => false, 'message' => 'This QR code has been revoked or disabled.'], 403);
     }
 
-    $check = db()->prepare('SELECT id FROM visitor_logs WHERE student_id = :student_id AND visit_date = CURDATE() LIMIT 1');
-    $check->execute([':student_id' => $student['id']]);
-    if ($check->fetch()) {
-        jsonResponse(['success' => false, 'message' => 'This QR code has already been used for this check-in.'], 409);
-    }
-
     if (!in_array($purpose, ['STUDY', 'BORROW_BOOK'], true)) {
         jsonResponse(['success' => false, 'message' => 'Select a valid visit purpose.'], 400);
     }

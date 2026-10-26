@@ -1,4 +1,4 @@
-CREATE DATABASE IF NOT EXISTS ssu_library_qr CHARACTER SET utf8mb4;
+/*CREATE DATABASE IF NOT EXISTS ssu_library_qr CHARACTER SET utf8mb4;
 
 USE ssu_library_qr;
 
@@ -47,14 +47,11 @@ CREATE TABLE student_qr_codes (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     revoked_at TIMESTAMP NULL DEFAULT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_student_qr_student (student_id),
     UNIQUE KEY uq_student_qr_hash (qr_identifier_hash),
+    KEY idx_student_qr_student (student_id),
     KEY idx_student_qr_status (status),
     CONSTRAINT fk_qr_student FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE CASCADE
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
-
-ALTER TABLE student_qr_codes
-    DROP INDEX uq_student_qr_student;
 
 CREATE TABLE visitor_logs (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -65,7 +62,6 @@ CREATE TABLE visitor_logs (
     purpose ENUM('STUDY', 'BORROW_BOOK') NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    UNIQUE KEY uq_visit_once_per_day (student_id, visit_date),
     KEY idx_visitor_logs_date (visit_date),
     KEY idx_visitor_logs_student (student_id),
     CONSTRAINT fk_visitor_student FOREIGN KEY (student_id) REFERENCES students (id) ON DELETE RESTRICT
@@ -98,4 +94,4 @@ VALUES (
         '$2y$10$wqmhAr9zRNrYmZ2YretKBe/KZRRV0u4AEk5S1Dr3JMkjQ2LoKNCbu',
         'super_admin'
     );
--- End: database setup
+-- End: database setup */
