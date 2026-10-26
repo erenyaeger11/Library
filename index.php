@@ -1,9 +1,15 @@
 <?php
+// [BLOCK: Application bootstrap]
+// Load shared configuration, mark this as an authorized page-template entry,
+// and start the admin's PHP session before reading or writing session data.
 require_once __DIR__ . '/api/config.php';
 
 define('LIBRARY_APP_ENTRY', true);
 startSession();
 
+// [BLOCK: Shared page helpers]
+// These helpers escape output for HTML, redirect after form actions, preserve
+// one-time messages across redirects, validate CSRF tokens, and record audits.
 function escapeHtml($value): string
 {
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -50,6 +56,9 @@ function auditStudentAction(array $admin, ?int $studentId, string $action, array
     ]);
 }
 
+// [BLOCK: Request and page setup]
+// Create a per-session CSRF token, validate the requested page against the
+// allowed page list, and collect session, asset-version, and flash-message data.
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -80,9 +89,14 @@ $flashError = getFlash('error');
 $createdStudent = getFlash('created_student');
 $generatedQr = getFlash('generated_qr');
 
+// [BLOCK: Process submitted forms]
+// All regular website form actions are handled here. POST actions are selected
+// by their hidden "action" field and redirect after completing their work.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
+    // Verify the admin credentials against the database, then regenerate the
+    // session ID and store the authenticated admin in the session.
     if ($action === 'login') {
         requireCsrfToken();
         $email = strtolower(trim((string) ($_POST['email'] ?? '')));
@@ -110,6 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Validate the form token, clear session data and its browser cookie, then
+    // destroy the session and send the browser back to the login page.
     if ($action === 'logout') {
         requireCsrfToken();
         $_SESSION = [];
@@ -122,6 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // Every other form action requires an authenticated administrator and a
+    // valid CSRF token before it is allowed to make changes.
     if (!$admin) {
         header('Location: index.php');
         exit;
@@ -130,6 +148,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         $pdo = db();
+
+        // Create or update a student after validating fields and preventing
+        // duplicate student numbers or email addresses.
         if ($action === 'create_student' || $action === 'update_student') {
             $studentId = (int) ($_POST['id'] ?? 0);
             $studentNumber = sanitizeString($_POST['student_number'] ?? '');
@@ -155,6 +176,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if ($action === 'create_student') {
+                // Add the student, initial QR-token hash, and audit record in
+                // one transaction; only the original token is shown to the UI.
                 $pdo->beginTransaction();
                 $stmt = $pdo->prepare(
                     'INSERT INTO students (student_number, full_name, email, program, year_level, account_status)
@@ -188,6 +211,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 setFlash('message', 'Student account created successfully.');
             } else {
+                // Update the existing student and record the change. A zero
+                // changed-row count can mean either no changes or no such ID.
                 $stmt = $pdo->prepare(
                     'UPDATE students
                      SET student_number = :student_number, full_name = :full_name, email = :email,
@@ -215,6 +240,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirectToPage('students');
         }
 
+        // Change student status. Deactivation also revokes their active QR
+        // codes; status and audit changes are committed together.
         if ($action === 'set_status') {
             $studentId = (int) ($_POST['id'] ?? 0);
             $status = (string) ($_POST['account_status'] ?? '');
@@ -248,6 +275,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirectToPage('students');
         }
 
+        // Permanently remove the student and visit history, then record an
+        // audit entry that retains the deleted ID and number of removed visits.
         if ($action === 'delete_student') {
             $studentId = (int) ($_POST['id'] ?? 0);
             if ($studentId <= 0) {
@@ -272,6 +301,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirectToPage('students');
         }
 
+        // Issue an additional QR token to an active student. The token hash and
+        // audit record are saved; the raw token is kept in flash data for display
+        // once after redirect so the page can render a downloadable QR image.
         if ($action === 'generate_qr') {
             $studentId = (int) ($_POST['id'] ?? 0);
             $stmt = $pdo->prepare(
@@ -305,6 +337,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirectToPage('qr-codes');
         }
     } catch (Throwable $e) {
+        // Roll back any unfinished database transaction and show an error on
+        // the same page instead of presenting a success result.
         if (isset($pdo) && $pdo->inTransaction()) {
             $pdo->rollBack();
         }
@@ -315,6 +349,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// [BLOCK: Require an admin for application pages]
+// Anonymous users see only the login template; authenticated users continue
+// into the database-loading and page-rendering parts of the controller.
 $admin = $_SESSION['admin'] ?? null;
 if (!$admin) {
     $loginError = $flashError;
@@ -322,6 +359,9 @@ if (!$admin) {
     exit;
 }
 
+// [BLOCK: Load data for the selected page]
+// Initialize page data, then query only the tables needed by the requested
+// dashboard, student/QR, logs, or scanner page.
 $dbError = '';
 $dashboard = null;
 $students = [];
@@ -329,6 +369,8 @@ $logs = [];
 $studentProfile = null;
 try {
     if ($page === 'dashboard') {
+        // Get dashboard totals, daily visit counts, recent visits, and newest
+        // student registrations. Fill missing dates with zero for the chart.
         $metrics = db()->query(
             "SELECT
               (SELECT COUNT(*) FROM students) AS total_students,
@@ -366,6 +408,8 @@ try {
             )->fetchAll()
         ];
     } elseif ($page === 'students' || $page === 'qr-codes') {
+        // Load students and their latest QR status for the management screens.
+        // An optional ?view= ID also loads the selected student's visit history.
         $students = db()->query(
             'SELECT s.id, s.student_number, s.full_name, s.email, s.program, s.year_level,
                     s.account_status, s.created_at,
@@ -393,6 +437,8 @@ try {
             }
         }
     } elseif ($page === 'logs' || $page === 'scanner') {
+        // Both screens show recent visits; the scanner only needs five while
+        // the full logs page displays up to one hundred.
         $logs = db()->query(
             'SELECT v.student_number_snapshot AS student_number, s.full_name, s.program, s.year_level,
                     v.visit_date, v.time_in, v.purpose
@@ -401,9 +447,14 @@ try {
         )->fetchAll();
     }
 } catch (Throwable $e) {
+    // Preserve the page if loading data fails and display an environment-aware
+    // error message in the shared layout below.
     $dbError = APP_ENV === 'development' ? $e->getMessage() : 'Unable to load data. Check your PHP and database configuration.';
 }
 
+// [BLOCK: Prepare view-specific values]
+// Filter the already-loaded student list for the search term and calculate a
+// non-zero chart scale so days with no visits still render a visible bar.
 $query = trim((string) ($_GET['q'] ?? ''));
 if ($query !== '' && $page === 'students') {
     $students = array_values(array_filter($students, static function ($student) use ($query): bool {
@@ -420,6 +471,9 @@ foreach (($dashboard['activity'] ?? []) as $day) {
     $maxVisits = max($maxVisits, (int) $day['visits']);
 }
 ?>
+<!-- [BLOCK: Document head]
+     Set browser metadata, title, and stylesheet. Load the QR generator only on
+     student/QR pages and the camera-scanning library only on the scanner page. -->
 <!doctype html>
 <html lang="en">
 
@@ -438,6 +492,9 @@ foreach (($dashboard['activity'] ?? []) as $day) {
     <?php endif; ?>
 </head>
 
+<!-- [BLOCK: Shared application layout]
+     Render desktop and mobile navigation, admin identity, flash/database errors,
+     then include the selected page template inside the main content area. -->
 <body>
     <div class="app-shell">
         <aside class="sidebar">
@@ -487,6 +544,9 @@ foreach (($dashboard['activity'] ?? []) as $day) {
             <?php require __DIR__ . '/pages/' . $page . '.php'; ?>
         </main>
     </div>
+    <!-- [BLOCK: Browser configuration]
+         Pass server-generated settings to the JavaScript app: the CSRF token,
+         scan endpoint, and flags indicating which page-specific behavior to run. -->
     <script>
         window.LibraryApp = <?= json_encode([
             'csrfToken' => $csrfToken,
@@ -495,6 +555,7 @@ foreach (($dashboard['activity'] ?? []) as $day) {
             'scannerPage' => $page === 'scanner'
         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
     </script>
+    <!-- Load shared browser behavior after the page markup has been parsed. -->
     <script src="<?= escapeHtml($basePath) ?>/assets/php-app.js?v=<?= escapeHtml($jsVersion) ?>" defer></script>
 </body>
 
